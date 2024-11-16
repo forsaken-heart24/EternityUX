@@ -11,3 +11,13 @@ https://atom-os.vercel.app/
 **Project Chloride Website:**
 https://www.chlorideos.top/
 
+
+Tools used :
+DSIM
+NTlite
+MSMG
+AnyBurn
+WinToolKit
+WinReducer
+
+  
