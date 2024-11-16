@@ -1,6 +1,6 @@
 # AtomOS-11
-For the extracted install.wim that is used in The AtomOS Release you are looking for go to **Releases**,
-You can find all the scripts used for tweaking AtomOS here
+All of the tweaks used in this release:
+https://github.com/ArabWep/Chloride-Tweaks
 
 
 # Wait for the AtomOS Builder
