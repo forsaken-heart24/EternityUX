@@ -21,3 +21,7 @@ WinToolKit
 WinReducer
 
   
+
+
+important :
+You should use the compact.bat after installing the windows
