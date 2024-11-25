@@ -22,14 +22,32 @@ microsoft main tools you need and core windows services.
 **About AtomOS**
 
 • Alot of performance & privacy tweaks.
+
+
 • All bloatware has been removed.
+
+
 • Removed unneeded drivers.
+
+
 • Removed lots of useless tasks.
+
+
 • Removed unneeded services.
+
+
 • Disabled power saving.
+
+
 • Disabled telemetry.
+
+
 • Disabled security mitigations.
+
+
 • Integrated thousands of lines of optimizations.
+
+
 
 **About AtomOS ToolBox**
 thousands of tweaks you can use !
