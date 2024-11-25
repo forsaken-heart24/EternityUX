@@ -4,17 +4,31 @@
 • AtomOS is a non-profit project focusing on 
 Giving you the best performance you can get without microsoft bloatwares.
 
+
+
+
+
 **What is gyrOS based on**?
 
 • AtomOS based on stock windows builds from 
 microsoft website.
 
+
+
+
+
+
 **What versions are available**?
+
 • There are two versions, AtomOS lite that gives you the best performance 
 you can get and is made for old devices. 
 • AtomOS Standard that gives you great performance with all of the main 
 microsoft main tools you need and core windows services.
 • Our newest addition is AtomOS 11 Standard, based on Windows 11 24h2.
+
+
+
+
 
 
 
