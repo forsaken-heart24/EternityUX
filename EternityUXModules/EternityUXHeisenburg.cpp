@@ -94,7 +94,7 @@ void schtasks() {
         "Microsoft\\Windows\\Shell\\FamilySafetyRefresh",
         "Microsoft\\Windows\\Shell\\FamilySafetyUpload"
     };
-    theseValuesMightGetCooked[] = {
+    const char *theseValuesMightGetCooked[] = {
         "\\Microsoft\\Windows\\DiskDiagnostic\\Microsoft-Windows-DiskDiagnosticDataCollector",
         "\\Microsoft\\Windows\\DiskDiagnostic\\Microsoft-Windows-DiskDiagnosticResolver",
         "\\Microsoft\\Windows\\Power Efficiency Diagnostics\\AnalyzeSystem",
