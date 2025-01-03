@@ -1,13 +1,32 @@
 #include <iostream>
 #include <string>
+#include <shlwapi.h>
+#include <windows.h>
+
+#pragma comment(lib, "Shlwapi.lib")
 
 bool is_debug() {
-    return true;
+    return false;
+}
+
+bool WindowsMessageQuestionBox(const char* whoTheFuckKnows) {
+    int theReturnOfTheMist = MessageBox(NULL, whoTheFuckKnows, "EternityUX", MB_YESNO);
+    if(theReturnOfTheMist == 6) {
+        return true;
+    }
+    return false;
+}
+
+bool WindowsMessageToastBox(const char* whoTheFuckKnows) {
+    int theReturnOfTheMist = MessageBox(NULL, whoTheFuckKnows, "EternityUX", MB_ICONINFORMATION);
+    if(theReturnOfTheMist == 6) {
+        return true;
+    }
+    return false;
 }
 
 void schtasks() {
     std::string command;
-    system("title EternityUX - Tweaking Scheduled Tasks...");
     const char *theseValuesWillGetChanged[] = {
         "Microsoft\\Windows\\Application Experience\\Microsoft Compatibility Appraiser",
         "Microsoft\\Windows\\Application Experience\\PcaPatchDbTask",
@@ -136,9 +155,10 @@ void schtasks() {
 }
 
 void touchRegistry() {
-    system("title EternityUX - Tweaking Registry...");
     std::string variableZero;
     std::string variableOne;
+    std::string variableTwo;
+    std::string variableThree;
     const char *modTheseKeyValues[] = {
         "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\appDiagnostics /F /V Value /T reg_SZ /d Deny",
         "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\appointments /F /V Value /T reg_SZ /d Deny",
@@ -422,9 +442,30 @@ void touchRegistry() {
         "HKLM\\Software\\Microsoft\\Windows\\Windows Error Reporting\\Consent /v DefaultConsent /t reg_DWORD /d 0 /f",
         "HKLM\\Software\\Microsoft\\Windows\\Windows Error Reporting\\Consent /v DefaultOverrideBehavior /t reg_DWORD /d 1 /f"
     };
-    char *deleteTheseKeyValues[] = {
-        "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\MicrosoftEdgeUpdateTaskMachineCore"
+    const char *deleteTheseKeyValues[] = {
+        "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\MicrosoftEdgeUpdateTaskMachineCore",
         "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\TaskCache\\Tree\\MicrosoftEdgeUpdateTaskMachineUA /f"
+    };
+    const char *pCIELatencyTweaker[] = {    
+        "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000 /v D3PCLatency /t REG_DWORD /d 1 /f",
+        "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000 /v F1TransitionLatency /t REG_DWORD /d 1 /f",
+        "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000 /v LOWLATENCY /t REG_DWORD /d 1 /f",
+        "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000 /v PciLatencyTimerControl /t REG_DWORD /d 20 /f",
+        "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000 /v RMDeepL1EntryLatencyUsec /t REG_DWORD /d 1 /f"
+    };
+    const char *uSBLatencyTweaker[] = { 
+        "HKLM\\SYSTEM\\CurrentControlSet\\Enum\\%%a\\Device Parameters /v SelectiveSuspendOn /t REG_DWORD /d 0 /f",
+        "HKLM\\SYSTEM\\CurrentControlSet\\Enum\\%%a\\Device Parameters /v SelectiveSuspendEnabled /t REG_BINARY /d 00 /f",
+        "HKLM\\SYSTEM\\CurrentControlSet\\Enum\\%%a\\Device Parameters\\WDF /v IdleInWorkingState /t REG_DWORD /d 0 /f"
+    };
+    for(int i = 0; i < sizeof(pCIELatencyTweaker) / sizeof(pCIELatencyTweaker[0]); i++) {
+        if(is_debug) {
+            variableTwo = "echo reg add " + std::string(pCIELatencyTweaker[i]);
+        }
+        else {
+            variableTwo = "reg add " + std::string(pCIELatencyTweaker[i]);
+        }
+        system(variableTwo.c_str());
     }
     for (int i = 0; i < sizeof(modTheseKeyValues) / sizeof(modTheseKeyValues[0]); i++) {
         if(is_debug) {
@@ -451,15 +492,28 @@ void touchRegistry() {
 }
 
 int main(int argc, char* argv[]) {
+    SetConsoleTitle("EternityUX Log Console");
     system("cls");
-    system("title EternityUX");
-    if (argc > 1 && std::string(argv[1]) == "--schtasks_tweaks") {
-        schtasks();
+    if(argc > 1) {
+        if(std::string(argv[1]) == "--schtasks_tweaks") {
+            schtasks();
+        }
+        else if(std::string(argv[1]) == "--reg_tweaks") {
+            touchRegistry();
+        }
+        else if(std::string(argv[1]) == "--test") {
+            WindowsMessageToastBox("The compiled application works without any issues, debug using Visual Studio if you want.");
+            exit(0);
+        }
     }
-    else if(argc > 1 && std::string(argv[1]) == "--reg_tweaks") {
-        touchRegistry();
+    else {
+        WindowsMessageToastBox("Search these up in google or ask ChatGPT if you don't know anything");
+        if(WindowsMessageQuestionBox("Do you want to tweak the Task Schedular?")) {
+            schtasks();
+        }
+        if(WindowsMessageQuestionBox("Do you want to tweak the System Registry?")) {
+            touchRegistry();
+        }
     }
-    std::cout << "\033[36mThanks for using my open sourced windows modifier tool, please gimme a star to my repo :3\033[0m\n";
-    system("pause>0");
-    return 0;
+    WindowsMessageToastBox("Thanks for using ExternityUX :3");
 }
