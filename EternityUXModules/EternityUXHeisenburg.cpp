@@ -2,28 +2,9 @@
 #include <string>
 #include <shlwapi.h>
 #include <windows.h>
+#include "EternityUXApplibrary.h"
 
 #pragma comment(lib, "Shlwapi.lib")
-
-bool is_debug() {
-    return false;
-}
-
-bool WindowsMessageQuestionBox(const char* whoTheFuckKnows) {
-    int theReturnOfTheMist = MessageBox(NULL, whoTheFuckKnows, "EternityUX", MB_YESNO);
-    if(theReturnOfTheMist == 6) {
-        return true;
-    }
-    return false;
-}
-
-bool WindowsMessageToastBox(const char* whoTheFuckKnows) {
-    int theReturnOfTheMist = MessageBox(NULL, whoTheFuckKnows, "EternityUX", MB_ICONINFORMATION);
-    if(theReturnOfTheMist == 6) {
-        return true;
-    }
-    return false;
-}
 
 void schtasks() {
     std::string command;
@@ -136,8 +117,6 @@ void schtasks() {
         }
         else {
             command = "schtasks /Change /TN " + std::string(theseValuesWillGetChanged[i]) + " /Disable";
-            std::cout << " not in debug mode, hit enter to execute!";
-            system("pause>0");
         }
         system(command.c_str());
     }
@@ -147,8 +126,6 @@ void schtasks() {
         }
         else {
             command = "schtasks /end /tn " + std::string(theseValuesMightGetCooked[i]);
-            std::cout << " not in debug mode, hit enter to execute!";
-            system("pause>0");
         }
         system(command.c_str());
     }
@@ -472,9 +449,7 @@ void touchRegistry() {
             variableZero = "echo reg add " + std::string(modTheseKeyValues[i]);
         }
         else {
-            variableZero = "reg add " + std::string(modTheseKeyValues[i]); 
-            std::cout << " not in debug mode, hit enter to execute!";
-            system("pause>0");
+            variableZero = "reg add " + std::string(modTheseKeyValues[i]);
         }
         system(variableZero.c_str());
     }
@@ -484,8 +459,6 @@ void touchRegistry() {
         }
         else {
             variableOne = "reg delete " + std::string(deleteTheseKeyValues[i]); 
-            std::cout << " not in debug mode, hit enter to execute!";
-            system("pause>0");
         }
         system(variableOne.c_str());
     }
@@ -493,7 +466,9 @@ void touchRegistry() {
 
 int main(int argc, char* argv[]) {
     SetConsoleTitle("EternityUX Log Console");
-    system("cls");
+    if(!isAdmin) {
+        WindowsMessageToastBox("Please run this application with administrator privilage!");
+    }
     if(argc > 1) {
         if(std::string(argv[1]) == "--schtasks_tweaks") {
             schtasks();

@@ -2,7 +2,7 @@
 color 4
 echo Building %1...
 windres Assets\resource.rc -o resource.o
-g++ %1 resource.o -o %1.exe
+g++ -I../include %i -o %.exe
 color 3
 echo Hit "Enter" to try testing the build!
 pause >nul 2>&1
