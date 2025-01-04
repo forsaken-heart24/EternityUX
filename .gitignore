@@ -1,3 +1,5 @@
 .vscode/settings.json
 .vscode/fur.bat
 /WindowsUsersWrapperScript
+/EternityUXModules/EternityUXHeisenburg.cpp
+who_knows.gitignore

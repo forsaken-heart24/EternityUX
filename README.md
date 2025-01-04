@@ -2,4 +2,4 @@
 
 # EternityUX
 - Simple windows tweaker that runs before oobe / setup.
-- This project is still in construction.
+- This project is still in construction and this won't be possible without <a href="https://github.com/ArabWep/AtomOS-11">AtomOS aka ChlorideOS</a>
