@@ -1,12 +1,18 @@
 #ifndef ETERNITYUXAPPLIBRARY_H
 #define ETERNITYUXAPPLIBRARY_H
 
-#include <string>
+#include <iostream>
 #include <unistd.h>
 #include <Windows.h>
 #include <shlwapi.h>
-
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <tlhelp32.h>
 #pragma comment(lib, "Shlwapi.lib")
+
+// acts as a switch to fucking toggle the GUI and non-GUI
+extern int DoiHaveGUIElementSupport;
 
 bool is_debug() {
     return false;
@@ -24,49 +30,99 @@ bool isAdmin() {
     return isAdmin == TRUE;
 }
 
-bool WindowsMessageQuestionBox(const char* whoTheFuckKnows) {
-    int theReturnOfTheMist = MessageBox(NULL, whoTheFuckKnows, "EternityUX", MB_YESNO);
-    if(theReturnOfTheMist == 6) {
-        return true;
+bool IsExecutedFromCMD() {
+    DWORD currentProcessId = GetCurrentProcessId();
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapshot == INVALID_HANDLE_VALUE) return false;
+    PROCESSENTRY32 pe32 = { sizeof(PROCESSENTRY32) };
+    DWORD parentProcessId = 0;
+    if (Process32First(hSnapshot, &pe32)) {
+        do {
+            if (pe32.th32ProcessID == currentProcessId) {
+                parentProcessId = pe32.th32ParentProcessID;
+                break;
+            }
+        } while (Process32Next(hSnapshot, &pe32));
     }
-    return false;
+    if (parentProcessId == 0) {
+        CloseHandle(hSnapshot);
+        return false;
+    }
+    bool isFromCMD = false;
+    if (Process32First(hSnapshot, &pe32)) {
+        do {
+            if (pe32.th32ProcessID == parentProcessId) {
+                isFromCMD = (std::string(pe32.szExeFile) == "cmd.exe");
+                break;
+            }
+        } while (Process32Next(hSnapshot, &pe32));
+    }
+    CloseHandle(hSnapshot);
+    return isFromCMD;
+}
+
+bool WindowsMessageQuestionBox(const char* whoTheFuckKnows) {
+    if (DoiHaveGUIElementSupport == 0) {
+        int theReturnOfTheMist = MessageBox(NULL, whoTheFuckKnows, "EternityUX", MB_YESNO);
+        return theReturnOfTheMist == IDYES;
+    }
+    else {
+        std::string ptrGrepString;
+        std::cout << whoTheFuckKnows << " (y/n): ";
+        std::cin >> ptrGrepString;
+        return ptrGrepString == "y" || ptrGrepString == "Y";
+    }
 }
 
 bool WindowsMessageToastBox(const char* whoTheFuckKnows) {
-    int theReturnOfTheMist = MessageBox(NULL, whoTheFuckKnows, "EternityUX", MB_ICONINFORMATION);
-    if(theReturnOfTheMist == 6) {
-        return true;
-    }
-    return false;
-}
-
-void executeInternalSystemCommands(char *command, char *arguments) {
-    char *theJuggleNaut;
-    int theWholeFuckingSizeOftheCommandAndArguments = sizeof(command) / sizeof(command) + sizeof(arguments) / sizeof(arguments);
-    snprintf(theJuggleNaut, theWholeFuckingSizeOftheCommandAndArguments, "%s %s", command, arguments);
-    execvp("cmd.exe", "cmd.exe", "/c", theJuggleNaut)
-}
-
-void taskKill(const char* theExecutableName) {
-    const char* theErrorMessage;
-    snprintf(theErrorMessage, "Failed to kill %s, please try again...", theExecutableName);
-    if(theExecutableName == NULL) {
-        WindowsMessageToastBox("The Application Executable Name is given in order to kill it");
-        exit(1);
-    }
-    // we are working with the system command, so we should make the command to not get fuxked.
-    int theFuckingExecutableNameStringSize = sizeof(theExecutableName) / sizeof(theExecutableName);
-    theExecutableName[theFuckingExecutableNameStringSize];
-
-    if(sizeof(theExecutableName) / sizeof(theExecutableName) > theFuckingExecutableNameStringSize) {
-        WindowsMessageToastBox("Buffer overflow detected, please close the application and try again!");
-    }
-    else if(sizeof(theExecutableName) / sizeof(theExecutableName) == theFuckingExecutableNameStringSize) {
-        snprintf(theExecutableName, " /f /t /im %s", theExecutableName);
-        if(executeInternalSystemCommands("taskkill", theExecutableName)) {
-            WindowsMessageToastBox(theErrorMessage);
-            return 1;
+    if(DoiHaveGUIElementSupport == 0) {
+        int theReturnOfTheMist = MessageBox(NULL, whoTheFuckKnows, "EternityUX", MB_ICONINFORMATION);
+        if(theReturnOfTheMist == 6) {
+            return true;
         }
+        return false;
+    }
+    else {
+        std::cout << whoTheFuckKnows << "\n";
+    }
+}
+
+void executeInternalSystemCommands(const char *command, const char *arguments) {
+    if (!command || !arguments) {
+        fprintf(stderr, "Invalid command or arguments\n");
+        return;
+    }
+    int size = strlen(command) + strlen(arguments) + 2;
+    char *theJuggleNaut = new char[size];
+    snprintf(theJuggleNaut, size, "%s %s", command, arguments);
+    char *const execArgs[] = {
+        (char*)"cmd.exe", 
+        (char*)"/c",
+        theJuggleNaut,
+        nullptr
+    };
+    execvp("cmd.exe", execArgs);
+    perror("execvp failed");
+    delete[] theJuggleNaut;
+    exit(1);
+}
+
+void warnTexts(const char *message, const char *activity) {
+    char dawnThatWasQuick[1048];
+    snprintf(dawnThatWasQuick, sizeof(dawnThatWasQuick), ": [%s] - %s :", activity, message);
+    std::cout << "\033[33m " << dawnThatWasQuick << "\033[0m" << "\n";
+}
+
+void taskKill(const char *theExecutableName) {
+    if (!theExecutableName) {
+        fprintf(stderr, "Executable name must be provided to kill it\n");
+        return;
+    }
+    char theCommand[256];
+    snprintf(theCommand, sizeof(theCommand), "taskkill /f /t /im %s", theExecutableName);
+    if (system(theCommand) != 0) {
+        fprintf(stderr, "Failed to kill %s, please try again...\n", theExecutableName);
+        warnTexts("Failed to kill %s, please try again...\n", theExecutableName);
     }
 }
 

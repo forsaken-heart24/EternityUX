@@ -2,8 +2,8 @@
 #include <string>
 #include <shlwapi.h>
 #include <windows.h>
+#include <tlhelp32.h>
 #include "EternityUXApplibrary.h"
-
 #pragma comment(lib, "Shlwapi.lib")
 
 void schtasks() {
@@ -464,31 +464,23 @@ void touchRegistry() {
     }
 }
 
-int main(int argc, char* argv[]) {
-    SetConsoleTitle("EternityUX Log Console");
-    if(!isAdmin) {
-        WindowsMessageToastBox("Please run this application with administrator privilage!");
+// Define if whether this application build will run on init or desktop
+// we should have to do it to get things working but we can use any value except 0 to 
+// get the non-gui elements to work.
+// This is the entry point for a GUI-based Windows application built using EternityUXApplibrary.h
+int DoiHaveGUIElementSupport = 0;
+
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    if(!isAdmin()) 
+        WindowsMessageToastBox("Please run this application with administrator privilages!");
+        exit(1);
+
+    WindowsMessageToastBox("Search these up in google or ask ChatGPT if you don't know anything");
+    if(WindowsMessageQuestionBox("Do you want to tweak the Task Schedular?")) {
+        schtasks();
     }
-    if(argc > 1) {
-        if(std::string(argv[1]) == "--schtasks_tweaks") {
-            schtasks();
-        }
-        else if(std::string(argv[1]) == "--reg_tweaks") {
-            touchRegistry();
-        }
-        else if(std::string(argv[1]) == "--test") {
-            WindowsMessageToastBox("The compiled application works without any issues, debug using Visual Studio if you want.");
-            exit(0);
-        }
-    }
-    else {
-        WindowsMessageToastBox("Search these up in google or ask ChatGPT if you don't know anything");
-        if(WindowsMessageQuestionBox("Do you want to tweak the Task Schedular?")) {
-            schtasks();
-        }
-        if(WindowsMessageQuestionBox("Do you want to tweak the System Registry?")) {
-            touchRegistry();
-        }
+    if(WindowsMessageQuestionBox("Do you want to tweak the System Registry?")) {
+        touchRegistry();
     }
     WindowsMessageToastBox("Thanks for using ExternityUX :3");
 }

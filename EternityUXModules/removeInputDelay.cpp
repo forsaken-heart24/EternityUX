@@ -2,7 +2,6 @@
 #include <Windows.h>
 #include <shlwapi.h>
 #include "EternityUXApplibrary.h"
-
 #pragma comment(lib, "Shlwapi.lib")
 
 void manageRegistry() {
@@ -45,13 +44,13 @@ void manageRegistry() {
     }
 }
 
-int main(int argc, char* argv[]) {
-    // fak u
-    SetConsoleTitle("EternityUX Log Console");
-    if(argc > 1 && std::string(argv[1]) == "--test") {
-        WindowsMessageToastBox("The compiled application works without any issues, debug using Visual Studio if you want.");
-        exit(0);
-    }
+// Define if whether this application build will run on init or desktop
+// we should have to do it to get things working but we can use any value except 0 to 
+// get the non-gui elements to work.
+// This is the entry point for a GUI-based Windows application built using EternityUXApplibrary.h
+int DoiHaveGUIElementSupport = 0;
+
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     // no
     if (!isAdmin()) {
         WindowsMessageToastBox("Please run this application with administrator privilages!");
