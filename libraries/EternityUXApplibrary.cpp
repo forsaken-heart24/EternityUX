@@ -1,6 +1,3 @@
-#ifndef ETERNITYUXAPPLIBRARY_H
-#define ETERNITYUXAPPLIBRARY_H
-
 #include <iostream>
 #include <unistd.h>
 #include <Windows.h>
@@ -9,16 +6,17 @@
 #include <cstdlib>
 #include <cstring>
 #include <tlhelp32.h>
+#include "EternityUXAppExternValues.h"
 #pragma comment(lib, "Shlwapi.lib")
 
-// acts as a switch to fucking toggle the GUI and non-GUI
-extern int DoiHaveGUIElementSupport;
+// Acts as a switch to toggle the GUI and non-GUI
+__declspec(dllexport) extern int DoiHaveGUIElementSupport;
 
-bool is_debug() {
+__declspec(dllexport) bool is_debug() {
     return false;
 }
 
-bool isAdmin() {
+__declspec(dllexport) bool isAdmin() {
     BOOL isAdmin = FALSE;
     PSID adminGroup = NULL;
     SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
@@ -30,7 +28,7 @@ bool isAdmin() {
     return isAdmin == TRUE;
 }
 
-bool IsExecutedFromCMD() {
+__declspec(dllexport) bool IsExecutedFromCMD() {
     DWORD currentProcessId = GetCurrentProcessId();
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE) return false;
@@ -61,7 +59,7 @@ bool IsExecutedFromCMD() {
     return isFromCMD;
 }
 
-bool WindowsMessageQuestionBox(const char* whoTheFuckKnows) {
+__declspec(dllexport) bool WindowsMessageQuestionBox(const char* whoTheFuckKnows) {
     if (DoiHaveGUIElementSupport == 0) {
         int theReturnOfTheMist = MessageBox(NULL, whoTheFuckKnows, "EternityUX", MB_YESNO);
         return theReturnOfTheMist == IDYES;
@@ -74,30 +72,26 @@ bool WindowsMessageQuestionBox(const char* whoTheFuckKnows) {
     }
 }
 
-bool WindowsMessageToastBox(const char* whoTheFuckKnows) {
-    if(DoiHaveGUIElementSupport == 0) {
+__declspec(dllexport) bool WindowsMessageToastBox(const char* whoTheFuckKnows) {
+    if (DoiHaveGUIElementSupport == 0) {
         int theReturnOfTheMist = MessageBox(NULL, whoTheFuckKnows, "EternityUX", MB_ICONINFORMATION);
-        if(theReturnOfTheMist == 6) {
-            return true;
-        }
-        return false;
+        return theReturnOfTheMist == 6;
     }
     else {
         std::cout << whoTheFuckKnows << "\n";
+        return true;
     }
 }
 
-void executeInternalSystemCommands(const char *command, const char *arguments) {
+__declspec(dllexport) void executeInternalSystemCommands(const char* command, const char* arguments) {
     if (!command || !arguments) {
         fprintf(stderr, "Invalid command or arguments\n");
         return;
     }
     int size = strlen(command) + strlen(arguments) + 2;
-    char *theJuggleNaut = new char[size];
+    char* theJuggleNaut = new char[size];
     snprintf(theJuggleNaut, size, "%s %s", command, arguments);
-    char *const execArgs[] = {
-        (char*)"cmd.exe", 
-        (char*)"/c",
+    char* execArgs[] = {
         theJuggleNaut,
         nullptr
     };
@@ -107,13 +101,13 @@ void executeInternalSystemCommands(const char *command, const char *arguments) {
     exit(1);
 }
 
-void warnTexts(const char *message, const char *activity) {
+__declspec(dllexport) void warnTexts(const char* message, const char* activity) {
     char dawnThatWasQuick[1048];
     snprintf(dawnThatWasQuick, sizeof(dawnThatWasQuick), ": [%s] - %s :", activity, message);
     std::cout << "\033[33m " << dawnThatWasQuick << "\033[0m" << "\n";
 }
 
-void taskKill(const char *theExecutableName) {
+__declspec(dllexport) void taskKill(const char* theExecutableName) {
     if (!theExecutableName) {
         fprintf(stderr, "Executable name must be provided to kill it\n");
         return;
@@ -121,9 +115,29 @@ void taskKill(const char *theExecutableName) {
     char theCommand[256];
     snprintf(theCommand, sizeof(theCommand), "taskkill /f /t /im %s", theExecutableName);
     if (system(theCommand) != 0) {
-        fprintf(stderr, "Failed to kill %s, please try again...\n", theExecutableName);
         warnTexts("Failed to kill %s, please try again...\n", theExecutableName);
     }
 }
 
-#endif
+__declspec(dllexport) void manageReg(const std::string& argument, const std::string& key, const std::string& valueName, const std::string& valueType, const std::string& valueData) {
+    // Check if the essential arguments are empty
+    if (argument.empty() || key.empty() || valueName.empty()) {
+        WindowsMessageToastBox("Not Enough arguments to parse, please report this to the developer!");
+        exit(1);
+    }
+    if (argument == "add") {
+        if (valueType.empty() || valueData.empty()) {
+            WindowsMessageToastBox("Not Enough arguments to parse, please report this to the developer!");
+            exit(1);
+        }
+        std::string command = "reg add \"" + key + "\" /v " + valueName + " /t " + valueType + " /d " + valueData + " /f";
+        executeInternalSystemCommands(command.c_str(), nullptr);  // No need for separate command and arguments
+    }
+    else if (argument == "delete") {
+        std::string commandArgument = "\"" + key + "\" /v " + valueName + " /f";
+        executeInternalSystemCommands("reg delete", commandArgument.c_str());
+    }
+    else {
+        WindowsMessageToastBox("Invalid Arguments, please report this to the developer if this error persists.");
+    }
+}
