@@ -1,22 +1,35 @@
+#ifndef ETERNITYUXAPPLIBRARY_H
+#define ETERNITYUXAPPLIBRARY_H
+
+#include "PredefinedExternityInitDeployerValues.h"
 #include <iostream>
 #include <unistd.h>
-#include <Windows.h>
 #include <shlwapi.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <tlhelp32.h>
-#include "EternityUXAppExternValues.h"
 #pragma comment(lib, "Shlwapi.lib")
 
-// Acts as a switch to toggle the GUI and non-GUI
-__declspec(dllexport) extern int DoiHaveGUIElementSupport;
+// Define if whether this application build will run on init or desktop
+// we should have to do it to get things working but we can use any value except 0 to 
+// get the non-gui elements to work.
+// This is the entry point for a GUI-based Windows application.
+extern int DoiHaveGUIElementSupport;
 
-__declspec(dllexport) bool is_debug() {
+std::string toLower(const std::string& input) {
+    std::string result = input;
+    for (char& c : result) {
+        c = std::tolower(c);
+    }
+    return result;
+}
+
+bool is_debug() {
     return false;
 }
 
-__declspec(dllexport) bool isAdmin() {
+bool isAdmin() {
     BOOL isAdmin = FALSE;
     PSID adminGroup = NULL;
     SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
@@ -28,38 +41,7 @@ __declspec(dllexport) bool isAdmin() {
     return isAdmin == TRUE;
 }
 
-__declspec(dllexport) bool IsExecutedFromCMD() {
-    DWORD currentProcessId = GetCurrentProcessId();
-    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-    if (hSnapshot == INVALID_HANDLE_VALUE) return false;
-    PROCESSENTRY32 pe32 = { sizeof(PROCESSENTRY32) };
-    DWORD parentProcessId = 0;
-    if (Process32First(hSnapshot, &pe32)) {
-        do {
-            if (pe32.th32ProcessID == currentProcessId) {
-                parentProcessId = pe32.th32ParentProcessID;
-                break;
-            }
-        } while (Process32Next(hSnapshot, &pe32));
-    }
-    if (parentProcessId == 0) {
-        CloseHandle(hSnapshot);
-        return false;
-    }
-    bool isFromCMD = false;
-    if (Process32First(hSnapshot, &pe32)) {
-        do {
-            if (pe32.th32ProcessID == parentProcessId) {
-                isFromCMD = (std::string(pe32.szExeFile) == "cmd.exe");
-                break;
-            }
-        } while (Process32Next(hSnapshot, &pe32));
-    }
-    CloseHandle(hSnapshot);
-    return isFromCMD;
-}
-
-__declspec(dllexport) bool WindowsMessageQuestionBox(const char* whoTheFuckKnows) {
+bool WindowsMessageQuestionBox(const char* whoTheFuckKnows) {
     if (DoiHaveGUIElementSupport == 0) {
         int theReturnOfTheMist = MessageBox(NULL, whoTheFuckKnows, "EternityUX", MB_YESNO);
         return theReturnOfTheMist == IDYES;
@@ -72,10 +54,10 @@ __declspec(dllexport) bool WindowsMessageQuestionBox(const char* whoTheFuckKnows
     }
 }
 
-__declspec(dllexport) bool WindowsMessageToastBox(const char* whoTheFuckKnows) {
+bool WindowsMessageToastBox(const char* whoTheFuckKnows) {
     if (DoiHaveGUIElementSupport == 0) {
         int theReturnOfTheMist = MessageBox(NULL, whoTheFuckKnows, "EternityUX", MB_ICONINFORMATION);
-        return theReturnOfTheMist == 6;
+        return theReturnOfTheMist == IDOK;  // Compare against IDOK (value 1)
     }
     else {
         std::cout << whoTheFuckKnows << "\n";
@@ -83,7 +65,7 @@ __declspec(dllexport) bool WindowsMessageToastBox(const char* whoTheFuckKnows) {
     }
 }
 
-__declspec(dllexport) void executeInternalSystemCommands(const char* command, const char* arguments) {
+void executeInternalSystemCommands(const char* command, const char* arguments) {
     if (!command || !arguments) {
         fprintf(stderr, "Invalid command or arguments\n");
         return;
@@ -101,13 +83,13 @@ __declspec(dllexport) void executeInternalSystemCommands(const char* command, co
     exit(1);
 }
 
-__declspec(dllexport) void warnTexts(const char* message, const char* activity) {
+void warnTexts(const char* message, const char* activity) {
     char dawnThatWasQuick[1048];
     snprintf(dawnThatWasQuick, sizeof(dawnThatWasQuick), ": [%s] - %s :", activity, message);
     std::cout << "\033[33m " << dawnThatWasQuick << "\033[0m" << "\n";
 }
 
-__declspec(dllexport) void taskKill(const char* theExecutableName) {
+void taskKill(const char* theExecutableName) {
     if (!theExecutableName) {
         fprintf(stderr, "Executable name must be provided to kill it\n");
         return;
@@ -119,25 +101,35 @@ __declspec(dllexport) void taskKill(const char* theExecutableName) {
     }
 }
 
-__declspec(dllexport) void manageReg(const std::string& argument, const std::string& key, const std::string& valueName, const std::string& valueType, const std::string& valueData) {
+bool manageReg(const std::string& argument, const std::string& key, const std::string& valueName, const std::string& valueType, const std::string& valueData) {
     // Check if the essential arguments are empty
-    if (argument.empty() || key.empty() || valueName.empty()) {
+    if(argument.empty() || key.empty()) {
         WindowsMessageToastBox("Not Enough arguments to parse, please report this to the developer!");
         exit(1);
     }
-    if (argument == "add") {
-        if (valueType.empty() || valueData.empty()) {
+    if(argument == "add") {
+        if(valueType.empty() || valueData.empty()) {
             WindowsMessageToastBox("Not Enough arguments to parse, please report this to the developer!");
             exit(1);
         }
         std::string command = "reg add \"" + key + "\" /v " + valueName + " /t " + valueType + " /d " + valueData + " /f";
         executeInternalSystemCommands(command.c_str(), nullptr);  // No need for separate command and arguments
     }
-    else if (argument == "delete") {
-        std::string commandArgument = "\"" + key + "\" /v " + valueName + " /f";
-        executeInternalSystemCommands("reg delete", commandArgument.c_str());
+    else if(argument == "delete") {
+        std::string commandArgument = "reg delete \"" + key + "\" /v " + valueName + " /f";
+        executeInternalSystemCommands(commandArgument.c_str(), nullptr);
+    }
+    else if(argument == "check") {
+        HKEY hKey;
+        LONG result = RegOpenKeyExA(HKEY_LOCAL_MACHINE, key.c_str(), 0, KEY_READ, &hKey);  // Corrected to &hKey
+        if(result == ERROR_SUCCESS){
+            return true;
+        }
+        return false;
     }
     else {
         WindowsMessageToastBox("Invalid Arguments, please report this to the developer if this error persists.");
     }
 }
+
+#endif
