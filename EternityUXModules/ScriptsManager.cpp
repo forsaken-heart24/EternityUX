@@ -10,7 +10,7 @@
 #pragma comment(lib, "Shlwapi.lib")
 
 // GUI bs
-int DoiHaveGUIElementSupport = 0;
+int DoiHaveGUIElementSupport = IsExecutedFromCMD() ? 1 : 0;
 
 void Eternity(const char *argvOne, const char *argvTwo) {
     if(std::string(argvOne) == "--disable") {
@@ -158,55 +158,91 @@ void Eternity(const char *argvOne, const char *argvTwo) {
 }
 
 void helpText(char *ExecutableName) {
-    if(DoiHaveGUIElementSupport == 1) {
-        std::cout << "#######################################################################################" << std::endl;
+    if (DoiHaveGUIElementSupport == 1) {
+        clearTerminalWindow();
+        std::cout << "##################################################################################################" << std::endl;
         std::cout << "d88888b d888888b d88888b d8888b. d8b   db d888888b d888888b db    db db    db db    db " << std::endl;
         std::cout << "88'     `~~88~~' 88'     88  `8D 888o  88   `88'   `~~88~~' `8b  d8' 88    88 `8b  d8' " << std::endl;
         std::cout << "88ooooo    88    88ooooo 88oobY' 88V8o 88    88       88     `8bd8'  88    88  `8bd8'  " << std::endl;
         std::cout << "88~~~~~    88    88~~~~~ 88`8b   88 V8o88    88       88       88    88    88  .dPYb.  " << std::endl;
         std::cout << "88.        88    88.     88 `88. 88  V888   .88.      88       88    88b  d88 .8P  Y8." << std::endl;
         std::cout << "Y88888P    YP    Y88888P 88   YD VP   V8P Y888888P    YP       YP    ~Y8888P' YP    YP " << std::endl;
-        std::cout << "#######################################################################################" << std::endl;
-        std::cout << "Usage " << ExecutableName << ":" << std::endl;
-        std::cout << "\nOptions:" << std::endl;
-        std::cout << "\t\t--disable : Disables a specified option" << std::endl;
-        std::cout << "\t\t--enable : Enables a specified option" << std::endl;
-        std::cout << "\nParameters / Option (Only works with --disable or --enable):";
-        std::cout << "\t\t-copilot" << std::endl;
-        std::cout << "\t\t-gamebar" << std::endl;
-        std::cout << "\t\t-windows-updates" << std::endl;
-        std::cout << "\t\t-background-apps" << std::endl;
-        std::cout << "\t\t-troubleshooting" << std::endl;
-        std::cout << "That's it, please put a like to my github project: github.com/forsaken-heart24/EternityUX\nThanks for showing love and using this tool!" << std::endl;
+        std::cout << "##################################################################################################" << std::endl;
+        std::cout << "Usage: " << ExecutableName << " --<option> -<parameter>" << std::endl;
+        std::cout << "Options:" << std::endl;
+        std::cout << "\t--disable : Disables a specified parameter" << std::endl;
+        std::cout << "\t--enable  : Enables a specified parameter" << std::endl;
+        std::cout << "\t--gui  : GUI tweaks, refer GUI Parameters" << std::endl;
+        std::cout << "Parameters:" << std::endl;
+        std::cout << "\t-copilot" << std::endl;
+        std::cout << "\t-gamebar" << std::endl;
+        std::cout << "\t-windows-updates" << std::endl;
+        std::cout << "\t-background-apps" << std::endl;
+        std::cout << "\t-troubleshooting" << std::endl;
+        std::cout << "\t-animations" << std::endl;
+        std::cout << "\t-edge (Can't be enabled)" << std::endl;
+        std::cout << "GUI Parameters:" << std::endl;
+        std::cout << "\t-old-alt-tab : Brings back the old Windows 7 Alt + Tab UI" << std::endl;
+        std::cout << "\t-new-alt-tab : Brings back the Default Alt + Tab UI" << std::endl;
+        std::cout << "That's it! Please give a like to my GitHub project: github.com/forsaken-heart24/EternityUX" << std::endl;
+        std::cout << "Thanks for showing love and using this tool!" << std::endl;
+        std::cout << "##################################################################################################" << std::endl;
+    } 
+    else if(DoiHaveGUIElementSupport == 0) {
+        std::string message =
+        "Usage: " + std::string(ExecutableName) + " --<option> -<parameter>\n"
+        "Options:\n"
+        "\t   --disable : Disables a specified parameter\n"
+        "\t   --enable  : Enables a specified parameter\n"
+        "\t   --gui     : GUI tweaks, refer GUI Parameters\n"
+        "Parameters:\n"
+        "\t   -copilot\n"
+        "\t   -gamebar\n"
+        "\t   -windows-updates\n"
+        "\t   -background-apps\n"
+        "\t   -troubleshooting\n"
+        "\t   -animations\n"
+        "\t   -edge (Can't be enabled)\n"
+        "GUI Parameters:\n"
+        "\t   -old-alt-tab : Switches to Windows 7 Alt + Tab UI\n"
+        "\t   -new-alt-tab : Switches to Default Alt + Tab UI\n"
+        "\nThat's it! Please give a like to my GitHub project: github.com/forsaken-heart24/EternityUX\n"
+        "Thanks for showing love and using this tool!\n";
+        displayTextInGUI(message);
     }
 }
 
 int main(int argc, char *argv[]) {
-    // initial checks.
-    if (argc < 3) {
-        std::cerr << "Insufficient arguments provided." << std::endl;
+    // If not enough arguments are passed
+    if (argc < 2) {
+        helpText(argv[0]);
         return 1;
     }
 
-    // prepare arguments
-    std::string One = toLower(std::string(argv[1]));
-    std::string Two = toLower(std::string(argv[2]));
+    // Prepare argument strings (convert them to lowercase)
+    std::string argumentOne = toLower(argv[1]);
+    std::string argumentTwo = argc > 2 ? toLower(argv[2]) : "";
 
-    // retarded.
-    if(One == "--disable" || One == "--enable" || One == "--gui") {
-        if(Two == "--old-alt-tab" || Two == "--new-alt-tab" || Two == "-game-mode" || Two == "-copilot" || Two == "-gamebar" || Two == "-windows-updates" || Two == "-background-apps" || Two == "-animations" || Two == "-troubleshooting") {
+    // fuck this.
+    if (argumentOne == "--disable" || argumentOne == "--enable" || argumentOne == "--gui") {
+        if (argumentTwo == "--old-alt-tab" || argumentTwo == "--new-alt-tab" || argumentTwo == "-game-mode" ||
+            argumentTwo == "-copilot" || argumentTwo == "-gamebar" || argumentTwo == "-windows-updates" ||
+            argumentTwo == "-background-apps" || argumentTwo == "-animations" || argumentTwo == "-troubleshooting") {
             Eternity(argv[1], argv[2]);
+            return 0;
         }
     }
-    else if(One == "--init") {
-        if(manageReg("check", "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment\\WinEternityStage", " ", " ", " ")) {
-            for(int i = 0; i < ishaj; i++) {
+    else if (argumentOne == "--init") {
+        if (manageReg("check", "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment\\WinEternityStage", " ", " ", " ")) {
+            for (int i = 0; i < ishaj; i++) {
                 Eternity("--disable", ThingsToDisable[i]);
             }
+            return 0;
         }
     }
-    else {
-        WindowsMessageToastBox("Hola amigo!");
+    else if (argumentOne == "--test" || argumentOne == "-t" || argumentOne == "--help" || argumentOne == "-h") {
         helpText(argv[0]);
+        return 0;
     }
+    return 1;
 }

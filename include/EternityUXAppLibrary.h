@@ -2,6 +2,7 @@
 #define ETERNITYUXAPPLIBRARY_H
 
 #include "PredefinedExternityInitDeployerValues.h"
+#include <algorithm>
 #include <iostream>
 #include <unistd.h>
 #include <shlwapi.h>
@@ -16,6 +17,47 @@
 // get the non-gui elements to work.
 // This is the entry point for a GUI-based Windows application.
 extern int DoiHaveGUIElementSupport;
+
+bool IsExecutedFromCMD() {
+    DWORD currentProcessId = GetCurrentProcessId();
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (hSnapshot == INVALID_HANDLE_VALUE) return false;
+
+    PROCESSENTRY32 pe32 = { sizeof(PROCESSENTRY32) };
+    DWORD parentProcessId = 0;
+
+    if (Process32First(hSnapshot, &pe32)) {
+        do {
+            if (pe32.th32ProcessID == currentProcessId) {
+                parentProcessId = pe32.th32ParentProcessID;
+                break;
+            }
+        } while (Process32Next(hSnapshot, &pe32));
+    }
+
+    if (parentProcessId == 0) {
+        CloseHandle(hSnapshot);
+        return false;
+    }
+
+    bool isFromCMD = false;
+
+    if (Process32First(hSnapshot, &pe32)) {
+        do {
+            if (pe32.th32ProcessID == parentProcessId) {
+                std::string exeFile(pe32.szExeFile);
+                std::transform(exeFile.begin(), exeFile.end(), exeFile.begin(), ::tolower);  // Convert to lowercase
+                if (exeFile == "cmd.exe") {
+                    isFromCMD = true;
+                }
+                break;
+            }
+        } while (Process32Next(hSnapshot, &pe32));
+    }
+
+    CloseHandle(hSnapshot);
+    return isFromCMD;
+}
 
 std::string toLower(const std::string& input) {
     std::string result = input;
@@ -95,14 +137,18 @@ void taskKill(const char* theExecutableName) {
         return;
     }
     char theCommand[256];
-    snprintf(theCommand, sizeof(theCommand), "taskkill /f /t /im %s", theExecutableName);
-    if (system(theCommand) != 0) {
-        warnTexts("Failed to kill %s, please try again...\n", theExecutableName);
+    snprintf(theCommand, sizeof(theCommand), "taskkill /f /t /im \"%s\"", theExecutableName);
+    int result = system(theCommand);
+    if (result != 0) {
+        warnTexts("Failed to kill process", theExecutableName);
+        WindowsMessageToastBox("Failed to kill process, please check if it exists or if you have sufficient permissions.");
+    }
+    else {
+        warnTexts("Successfully killed", theExecutableName);
     }
 }
 
 bool manageReg(const std::string& argument, const std::string& key, const std::string& valueName, const std::string& valueType, const std::string& valueData) {
-    // Check if the essential arguments are empty
     if(argument.empty() || key.empty()) {
         WindowsMessageToastBox("Not Enough arguments to parse, please report this to the developer!");
         exit(1);
@@ -113,23 +159,42 @@ bool manageReg(const std::string& argument, const std::string& key, const std::s
             exit(1);
         }
         std::string command = "reg add \"" + key + "\" /v " + valueName + " /t " + valueType + " /d " + valueData + " /f";
-        executeInternalSystemCommands(command.c_str(), nullptr);  // No need for separate command and arguments
+        if(system(command.c_str()) != 0) {
+            WindowsMessageToastBox("Failed to add registry value. Please check the arguments or system permissions.");
+            exit(1);
+        }
     }
     else if(argument == "delete") {
         std::string commandArgument = "reg delete \"" + key + "\" /v " + valueName + " /f";
-        executeInternalSystemCommands(commandArgument.c_str(), nullptr);
+        if(system(commandArgument.c_str()) != 0) {
+            WindowsMessageToastBox("Failed to delete registry value. Please check the arguments or system permissions.");
+            exit(1);
+        }
     }
     else if(argument == "check") {
         HKEY hKey;
-        LONG result = RegOpenKeyExA(HKEY_LOCAL_MACHINE, key.c_str(), 0, KEY_READ, &hKey);  // Corrected to &hKey
-        if(result == ERROR_SUCCESS){
+        LONG result = RegOpenKeyExA(HKEY_LOCAL_MACHINE, key.c_str(), 0, KEY_READ, &hKey);
+        if(result == ERROR_SUCCESS) {
+            RegCloseKey(hKey);  // Close the key once done
             return true;
         }
-        return false;
+        else {
+            WindowsMessageToastBox("Registry key not found or access denied.");
+            return false;
+        }
     }
     else {
         WindowsMessageToastBox("Invalid Arguments, please report this to the developer if this error persists.");
+        exit(1);
     }
+}
+
+void clearTerminalWindow() {
+    std::cout << "\033c";
+}
+
+void displayTextInGUI(const std::string& text) {
+    MessageBox(NULL, text.c_str(), "Help Text", MB_OK | MB_ICONINFORMATION);
 }
 
 #endif
